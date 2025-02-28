@@ -1,0 +1,106 @@
+Установка библиотек в google colab
+!pip install <названия>
+
+Что понадобится скорее всего для классик мл (80% случаев)
+sklearn catboost numpy pandas
+
+import sklearn
+from catboost import CatBoost...
+import numpy as np
+import pandas an pd
+
+открыть датасет
+train_data = pd.read_csv("train.csv")
+
+формируем сеты
+X_train = train_data.drop(["Survived", "Cabin"], axis=1) | Удаляем целевую переменную
+из train_data
+
+y_train = train_data["Survived"] | оставляем целевую из train_data
+
+################################################
+Преобработка датасета и введение доп. данных
+
+X_train.shape | Размер данных
+X_train.info() | Кол-во колонок и их названия
+X_train.isnull().sum() | Сумма пропущенных колонок (если много удаляй из датасета)
+X_train.describe() | Посмотреть данные о сете (count, mean, min, max) | include = "all" сводка, включая пропущенные
+X_train.head(n) | Вывести первые n строк
+
+X_train[X_train["target"] == target_value].shape[0] | Количество строчек попадающих под условие
+X_train[(X_train["target"]) == target_value & (X_train["target2"] == target_value2)].shape[0] | Несколько условий
+"|" - или
+"&" - и
+
+X_train_encoded = pd.get_dummies(X_train, columns=['target'], drop_first=True) | Изменить категориальное значение на бинарное
+
+Обработка пропущенных значений
+from sklearn.impute import SimpleImputer
+
+numeric_cols = df.select_dtypes(include=[np.number]).columns 
+
+Для числовых
+imputer = SimpleImputer(strategy='mean') | mean - сред. арифм, most_frequent - самое частое,
+constant - значение для вставки, median - среднее значение датасета
+
+Для категориальных
+imputer_cat = SimpleImputer(strategy='most_frequent')
+imputer_cat = SimpleImputer(strategy='constant', fill_value="value") | для числовых тоже подходит
+
+Замена по условию
+X_train.loc[X_train["target"] == target_value, ["feature1"]] = new_value | Если условие проходит то меняет значение "feature1" на new_value
+
+################################################
+MSE, RMSE, Acc
+
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import accuracy_score
+
+accuracy = accuracy_score(y_test, y_pred)
+mse = mean_squared_error(y_train, predictions)
+rmse = np.sqrt(mse)
+
+train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+mse = mean_squared_error(y_test, y_pred) | Для регрессии
+accuracy = accuracy_score(y_test, y_pred) | Для классификации
+
+
+################################################
+Работа с моделью (CatBoostClassifier)
+
+model = CatBoostClassifier( iterations=3000, | Кол-во итераций (не ставь очень много обычно хватает 600-1500)
+learning_rate=0.03,                          | Коэф. изменения весов (0.01-0.1)
+ depth=8,                                    | Глубина дерева (6-9)
+ l2_leaf_reg=5,                              | Функция потерь на уровне листьев (3-5)
+ verbose=100)                                | (Неважное) Выводить инфу об обучении раз в N раз
+
+model.fit(X_train, y_train) | Первое значение train_csv без целевой, второе  train_csv["target"]
+predict = model.predict(test_csv) | Предикты по test.csv
+
+################################################
+Сохранение в submission
+submission = pd.DataFrame({"PassengerId": test_csv["PassengerId"], "Survived": predict}) | Первое айдишник, второе предикты
+submission.to_csv("submission.csv", index=False)
+
+################################################
+Вдруг понадобится
+
+from sklearn.ensemble import StackingRegressor
+from sklearn.model_selection import KFold
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
+
+
+final_estimator = Ridge(alpha=0.1) | Штраф за использование больших весов
+kf = KFold(n_splits=5, shuffle=True, random_state=42) | Кросс-валидация, разбивает данные на множество (попробуй использовать)
+
+stacking_model = StackingRegressor(
+    estimators=[('catboost', catboost), ('lgbm', lgbm)], | estimators - все твои модели, final_estimator - верхеуровневая,
+    final_estimator=final_estimator,                     | которая будет работать над результатами низкоуровневых (estimators)
+    cv=kf
+)
+
