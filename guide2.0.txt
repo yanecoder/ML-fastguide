@@ -37,7 +37,8 @@ X_train_encoded = pd.get_dummies(X_train, columns=['target'], drop_first=True) |
 Обработка пропущенных значений
 from sklearn.impute import SimpleImputer
 
-numeric_cols = df.select_dtypes(include=[np.number]).columns 
+numeric_cols = df.select_dtypes(include=[np.number]).columns | Узнать числовые значения
+cat_cols = df.select_dtypes(include=["object"]).columns | Узнать строковые/категориальные данные
 
 Для числовых
 imputer = SimpleImputer(strategy='mean') | mean - сред. арифм, most_frequent - самое частое,
@@ -46,6 +47,9 @@ constant - значение для вставки, median - среднее зн�
 Для категориальных
 imputer_cat = SimpleImputer(strategy='most_frequent')
 imputer_cat = SimpleImputer(strategy='constant', fill_value="value") | для числовых тоже подходит
+
+train_data_e[num_cols] = num_imputer.fit_transform(train_data_e[num_cols]) | Для train.csv используем fit_transform
+test_data_e[num_cols] = num_imputer.transform(test_data_e[num_cols])       | Для уже обученных данных используем transform
 
 Замена по условию
 X_train.loc[X_train["target"] == target_value, ["feature1"]] = new_value | Если условие проходит то меняет значение "feature1" на new_value
